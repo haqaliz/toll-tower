@@ -1,0 +1,24 @@
+{
+  "development": {
+    "username": "u_bloom",
+    "password": "king_1374",
+    "database": "bloom",
+    "host": "localhost",
+    "dialect": "postgres",
+    "define": {
+      "createdAt": "created_at",
+      "updatedAt": "updated_at"
+    }
+  },
+  "production": {
+    "username": "u-bloom",
+    "password": "QeOtLqfzR8Su$",
+    "database": "bloom",
+    "host": "localhost",
+    "dialect": "postgres",
+    "define": {
+      "createdAt": "created_at",
+      "updatedAt": "updated_at"
+    }
+  }
+}
