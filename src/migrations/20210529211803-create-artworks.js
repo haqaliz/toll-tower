@@ -6,7 +6,7 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.STRING,
       },
-      address: {
+      creator_id: {
         type: Sequelize.STRING,
         allowNull: false,
       },

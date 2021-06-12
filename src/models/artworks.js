@@ -1,17 +1,29 @@
 const { Model } = require('sequelize');
+const { Op } = require('sequelize');
+
 module.exports = (sequelize, DataTypes) => {
   class Artworks extends Model {
-    /**
-     * Helper method for defining associations.
-     * This method is not a part of Sequelize lifecycle.
-     * The `models/index` file will call this method automatically.
-     */
+    static search(query) {
+      return Artworks.findAll({
+        where: {
+          [Op.or]: [
+            { "raw.creator.username": { [Op.iLike]: `%${query}%` } },
+            { "raw.creator.name": { [Op.iLike]: `%${query}%` } },
+            { "raw.creator.description": { [Op.iLike]: `%${query}%` } },
+            { "raw.name": { [Op.iLike]: `%${query}%` } },
+            { "raw.description": { [Op.iLike]: `%${query}%` } },
+          ],
+        },
+        include: ['creator'],
+      });
+    }
+    
     static associate(models) {
-      // define association here
+      Artworks.belongsTo(models.Users, { foreignKey: 'creator_id', as: 'creator' });
     }
   };
   Artworks.init({
-    address: DataTypes.STRING,
+    creator_id: DataTypes.STRING,
     raw: DataTypes.JSONB,
     renewed_at: DataTypes.DATE,
     created_at: DataTypes.DATE,

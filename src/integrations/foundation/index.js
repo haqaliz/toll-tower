@@ -1,5 +1,4 @@
 const axios = require('axios');
-const { utils } = require('Web3');
 const models = require('../../models');
 const cheerio = require('cheerio');
 const _ = require('lodash');
@@ -10,6 +9,8 @@ const ax = {
 };
 const Vibrant = require('node-vibrant');
 
+const utils = require('../../utils');
+const assets = require('../../config/assets.json');
 const methods = require('./methods.json');
 const buildQuery = (methodName, params) => ({
   "query": `query ${methods[methodName]}`,
@@ -19,18 +20,49 @@ const buildQuery = (methodName, params) => ({
 const getArtworksFromDB = (id, options) => models.Artworks.findAll({
   ...((id.toLowerCase() !== 'all') && {
     where: {
-      address: utils.toChecksumAddress(id),
+      creator_id: utils.toChecksumAddress(id),
     },
   }),
+  ...{
+    include: ['creator'],
+    attributes: {exclude: ['creator_id'] },
+  },
   ...options,
+});
+
+const getUserFromDB = (id) => models.Users.findOne({
+  where: {
+    id: utils.toChecksumAddress(id),
+  },
+  include: ['asset'],
 });
 
 module.exports = {
   getUser: async (id) => {
-    const { data } = await ax.hasura.post('', buildQuery(
-      'userByPublicKey', { publicKey: utils.toChecksumAddress(id) },
-    ));
-    return _.get(data, 'data.user');
+    const [user, fetchedUserReq] = await Promise.all([
+      getUserFromDB(id),
+      ax.hasura.post('', buildQuery(
+        'userByPublicKey', { publicKey: utils.toChecksumAddress(id) },
+      )),
+    ])
+    const fetchedUser = _.get(fetchedUserReq, 'data.data.user');
+    if (
+      !user
+      || fetchedUser.username !== user.username
+      || fetchedUser.profileImageUrl !== user.profileImageUrl
+    ) {
+      const address = utils.toChecksumAddress(id);
+      const [asset] = await models.Assets.findOrCreate({
+        where: { address },
+        defaults: { address, ...assets },
+      });
+      await models.Users.upsert({
+        id: utils.toChecksumAddress(id),
+        raw: fetchedUser,
+        asset_id: asset.id,
+      });
+    }
+    return await getUserFromDB(id);
   },
   getMintedArtworks: async (
     id, offset, limit, statuses,
@@ -43,8 +75,18 @@ module.exports = {
     }));
     return _.get(data, 'data.artworks');
   },
-  
-  getArtwork: async (artworkId) => models.Artworks.findByPk(artworkId),
+  getArtworkHistory: async (contractId) => {
+    const { data } = await ax.fnd.post('', buildQuery('artworkHistory', {
+      addressPlusTokenId: contractId,
+    }));
+    return _.get(data, 'data.nft');
+  },
+  getArtwork: async (artworkId) => models.Artworks.findOne({
+    where: {
+      id: artworkId,
+    },
+    include: ['creator'],
+  }),
   getArtworks: async (
     userId,
     offset = 0,
@@ -56,7 +98,10 @@ module.exports = {
       offset, limit, order: [['renewed_at', 'DESC']],
     });
     if (userId.toLowerCase() === 'all') return artworksList;
-    const mintedArtworks = await module.exports.getMintedArtworks(userId, offset, limit,  statuses);
+    const [mintedArtworks, creator] = await Promise.all([
+      module.exports.getMintedArtworks(userId, offset, limit,  statuses),
+      module.exports.getUser(userId),
+    ]);
     const targetArtworksToFetch = mintedArtworks.filter((i) => {
       const minted = {
         tokenId: parseInt(i.tokenId, 10),
@@ -75,15 +120,22 @@ module.exports = {
       };
       if (
         storedItem
-        && ((stored.auctionId === minted.auctionId)
-        || (stored.price === minted.price))
+        && (
+          (stored.auctionId === minted.auctionId)
+          || (stored.price === minted.price)
+        )
       ) return false;
       return true;
     });
     if (!targetArtworksToFetch.length) return artworksList;
-    const tokenIds = targetArtworksToFetch.map(
-      (i) => parseInt(i.tokenId, 10),
-    );
+    const [tokenIds, artworksHistory] = [
+      targetArtworksToFetch.map(
+        (i) => parseInt(i.tokenId, 10),
+      ),
+      await Promise.all(targetArtworksToFetch.map(
+        (i) => module.exports.getArtworkHistory(i.id),
+      )),
+    ];
     const { data } = await ax.hasura.post('', buildQuery('artworksByTokenIds', {
       tokenIds,
       excludeHidden,
@@ -93,7 +145,7 @@ module.exports = {
     const fetchedArtworks = _.get(data, 'data.artworks');
     const artworksUrl = (await Promise.all(fetchedArtworks.map((i) => {
       const artworkEndpoint = `-${i.tokenId}`;
-      return axios.get(`https://foundation.app/@${i.creator.username}/${artworkEndpoint}`);
+      return axios.get(`https://foundation.app/@${creator.raw.username}/${artworkEndpoint}`);
     }))).map((i) => {
       const $ = cheerio.load(i.data);
       const preview = $('meta[property="og:image"]').attr('content')
@@ -107,25 +159,35 @@ module.exports = {
       color: j.getHex(), population: j.population,
     })));
     await Promise.all(_.get(data, 'data.artworks').map((i, k) => {
-      const mintedArtwork = targetArtworksToFetch.find((j) => parseInt(j.tokenId, 10) === parseInt(i.tokenId, 10));
+      const [mintedArtwork, artworkHistory] = [
+        targetArtworksToFetch.find((j) => parseInt(j.tokenId, 10) === parseInt(i.tokenId, 10)),
+        artworksHistory.find((j) => parseInt(j.tokenId, 10) === parseInt(i.tokenId, 10)),
+      ];
       return {
         ...mintedArtwork,
+        ...artworkHistory,
         ...i,
+        contract: artworkHistory.id,
         preview: artworksUrl[k].preview,
         url: artworksUrl[k].artwork,
         palette: artworksPalette[k],
       };
     }).map((i) => models.Artworks.upsert({
       id: i.id || i.assetId,
-      address: utils.toChecksumAddress(userId),
+      creator_id: utils.toChecksumAddress(userId),
       raw: i,
       renewed_at: (i.mostRecentActiveAuction && new Date(i.mostRecentActiveAuction.dateCreated * 1000)) || new Date(),
       created_at: (i.mostRecentActiveAuction && new Date(i.mostRecentActiveAuction.dateCreated * 1000)) || new Date(),
     })));
     return await getArtworksFromDB(userId, { offset, limit, order: [['renewed_at', 'DESC']] });
   },
-  search: async(query, indexes = ['users', 'artworks'], limit = 3) => {
+  search: async (query, indexes = ['users', 'artworks'], limit = 3) => {
     if (typeof indexes === 'string') indexes = indexes.split(',');
+    const [users, artworks] = await Promise.all([
+      models.Users.search(query),
+      models.Artworks.search(query),
+    ]);
+    if (users.length || artworks.length) return { users, artworks };
     const { data } = await ax.algolia.post('', {
       requests: indexes.map((indexName) => ({
         indexName,

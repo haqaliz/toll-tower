@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+
+if [ -n $2 ]; then
+	npx sequelize-cli model:generate --name $1 --attributes $2
+else
+	npx sequelize-cli model:generate --name $1
+fi
