@@ -117,7 +117,8 @@ regularRouter.get('/user/current', asyncHandler(async (req, res) => {
     bio: req.user.raw.bio,
     links: _.map(req.user.raw.links).filter((i) => i.handle),
     assets: {
-      preferences: req.user.asset.preferences || 0,
+      preferences: req.user.asset.preferences,
+      bold: req.user.asset.bold,
     },
   }));
 }));

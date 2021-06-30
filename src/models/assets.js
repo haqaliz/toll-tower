@@ -8,6 +8,7 @@ module.exports = (sequelize, DataTypes) => {
   Assets.init({
     address: DataTypes.STRING,
     preferences: DataTypes.INTEGER,
+    bold: DataTypes.INTEGER,
     created_at: DataTypes.DATE,
     updated_at: DataTypes.DATE,
   }, {
