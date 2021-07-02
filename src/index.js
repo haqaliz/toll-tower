@@ -130,6 +130,21 @@ regularRouter.get('/user/artworks', asyncHandler(async (req, res) => {
   )));
 }));
 
+regularRouter.put('/user/assets', asyncHandler(async (req, res) => {
+  if (!req.user) return res.sendStatus(400);
+  const transaction = await models.TransactionsHistory.create({
+    address: req.user.id,
+    contract: req.body.contract,
+    content: req.body.content,
+    created_at: new Date(),
+  });
+  _.forEach(transaction.content, (i, k) => {
+    if (req.user.asset[k]) req.user.asset[k] += i.quantity;
+  });
+  req.user.asset.save();
+  res.sendStatus(200);
+}));
+
 regularRouter.get('/user/:user_id/detail', asyncHandler(
   async (req, res) => res.send(
     utils.cast.user(await foundation.getUser(req.params.user_id)),
