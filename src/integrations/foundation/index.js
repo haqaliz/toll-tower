@@ -10,7 +10,7 @@ const ax = {
 const Vibrant = require('node-vibrant');
 
 const utils = require('../../utils');
-const assets = require('../../config/assets.json');
+const ASSETS = require('../../config/assets.json');
 const methods = require('./methods.json');
 const buildQuery = (methodName, params) => ({
   "query": `query ${methods[methodName]}`,
@@ -25,7 +25,10 @@ const getArtworksFromDB = (id, options) => models.Artworks.findAll({
   }),
   ...{
     include: ['creator'],
-    attributes: {exclude: ['creator_id'] },
+    order: [
+      ['renewed_at', 'DESC'],
+    ],
+    attributes: { exclude: ['creator_id'] },
   },
   ...options,
 });
@@ -47,14 +50,17 @@ module.exports = {
     ])
     const fetchedUser = _.get(fetchedUserReq, 'data.data.user');
     if (
-      !user
-      || fetchedUser.username !== user.username
-      || fetchedUser.profileImageUrl !== user.profileImageUrl
+      fetchedUser
+      && (
+        !user
+        || fetchedUser.username !== user.raw.username
+        || fetchedUser.profileImageUrl !== user.raw.profileImageUrl
+      )
     ) {
       const address = utils.toChecksumAddress(id);
       const [asset] = await models.Assets.findOrCreate({
         where: { address },
-        defaults: { address, ...assets },
+        defaults: { address, ...ASSETS },
       });
       await models.Users.upsert({
         id: utils.toChecksumAddress(id),

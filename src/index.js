@@ -13,6 +13,8 @@ const utils = require('./utils.js');
 const logger = require('./logger.js');
 const { foundation, price } = require('./integrations');
 
+const ASSETS = require('./config/assets.json');
+
 // CORS
 const origins = ['http://localhost:8080'];
 
@@ -144,6 +146,41 @@ regularRouter.put('/user/assets', asyncHandler(async (req, res) => {
   req.user.asset.save();
   res.sendStatus(200);
 }));
+
+regularRouter.post('/user/artwork/:artwork_id/power-up', asyncHandler(async (req, res) => {
+  if (!req.user) return res.sendStatus(400);
+  const artwork = await models.Artworks.findOne({
+    where: {
+      id: req.params.artwork_id,
+    },
+    include: [
+      {
+        association: 'creator',
+        include: ['asset'],
+      },
+    ],
+  });
+  const powerUps = _.keys(req.body);
+  if (
+    !powerUps.some((i) => _.keys(ASSETS).includes(i))
+    || (
+      powerUps.includes('preferences')
+      && (Date.now() - (utils.getTime(artwork.renewed_at) / 1000) < (2 * 60))
+    )
+  ) return res.sendStatus(400);
+  if (!artwork.is_bold && powerUps.includes('bold')) {
+    artwork.creator.asset.bold -= 1;
+    artwork.is_bold = true;
+  }
+  if (powerUps.includes('preferences')) {
+    artwork.creator.asset.preferences -= 1;
+    artwork.renewed_at = new Date();
+  }
+  artwork.creator.asset.save();
+  artwork.save();
+  res.sendStatus(200);
+}));
+
 
 regularRouter.get('/user/:user_id/detail', asyncHandler(
   async (req, res) => res.send(

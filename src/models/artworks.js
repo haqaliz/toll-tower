@@ -20,6 +20,7 @@ module.exports = (sequelize, DataTypes) => {
     
     static associate(models) {
       Artworks.belongsTo(models.Users, { foreignKey: 'creator_id', as: 'creator' });
+      Artworks.hasOne(models.Assets, { foreignKey: 'address', as: 'asset' });
     }
   };
   Artworks.init({
@@ -27,6 +28,7 @@ module.exports = (sequelize, DataTypes) => {
     raw: DataTypes.JSONB,
     renewed_at: DataTypes.DATE,
     created_at: DataTypes.DATE,
+    is_bold: DataTypes.BOOLEAN,
   }, {
     sequelize,
     modelName: 'Artworks',

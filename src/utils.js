@@ -4,6 +4,7 @@ const { getTime } = require('date-fns');
 
 module.exports = {
   toChecksumAddress: utils.toChecksumAddress,
+  getTime,
   cast: {
     artworks: (array) => array.map((i) => ({
       id: i.id,
@@ -28,6 +29,7 @@ module.exports = {
       },
       description: i.raw.description,
       renewed_at: getTime(i.renewed_at) / 1000,
+      is_bold: i.is_bold,
     })),
     artwork: (object) => ({
       id: object.id,
@@ -53,6 +55,7 @@ module.exports = {
       },
       description: object.raw.description,
       renewed_at: getTime(object.renewed_at) / 1000,
+      is_bold: object.is_bold,
     }),
     search: (result) => _.mapValues(result, (i, k) => (i.hits || i).map((j) => ({
       id: j.publicKey || j.raw.publicKey,
