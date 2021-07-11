@@ -1,10 +1,9 @@
-node_modules
+env/env
 logs
 local
+node_modules
+git-state.txt
+.adminbro
 .DS_Store
-dist
-dist-ssr
-*.local
-*.lock
-*.swp
-
+command.sql
+*.zip

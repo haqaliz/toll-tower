@@ -40,6 +40,7 @@ parser.add_argument('--docker-build', '--dkrb', action='store_true')
 parser.add_argument('--docker-push', '--dkrp', action='store_true')
 parser.add_argument('--deploy-staging', '--ds', choices=['only'], nargs='?', const=True)
 parser.add_argument('--deploy-production', '--dp', choices=['only'], nargs='?', const=True)
+parser.add_argument('--deploy-skip-build', action='store_true')
 parser.add_argument('--deploy-skip-migrate', action='store_true')
 
 # config
@@ -60,7 +61,7 @@ DOCKER_REGISTRY_PW = 'QeOtLqfzR8Su$'
 DOCKER_TAG = f'{DOCKER_REGISTRY}/bloomo-backend-{args.env}'
 
 ENV_PATH = '/root/bloomo/env'
-STATIC_PATH = '/bloomo/static'
+STATIC_PATH = '/root/bloomo/static'
 POSTGRES_DATA_PATH = '/mnt/postgres-data'
 POSTGRES_PW = 'QeOtLqfzR8Su$'
 
@@ -288,13 +289,15 @@ if args.sequelize_cli:
     invoke(f'npx sequelize-cli')
 
 if args.docker_build or args.deploy_staging == True or args.deploy_production == True:
-    git_state()
-    invoke(f'docker image rm {DOCKER_TAG}', check=False)
-    invoke(f'docker build -t {DOCKER_TAG} .')
+    if not args.deploy_skip_build:
+        git_state()
+        invoke(f'docker image rm {DOCKER_TAG}', check=False)
+        invoke(f'docker build -t {DOCKER_TAG} .')
 
 if args.docker_push or args.deploy_staging == True or args.deploy_production == True:
-    invoke(f'docker login -u bloomo -p {DOCKER_REGISTRY_PW} {DOCKER_REGISTRY}')
-    invoke(f'docker push {DOCKER_TAG}')
+    if not args.deploy_skip_build:
+        invoke(f'docker login -u bloomo -p {DOCKER_REGISTRY_PW} {DOCKER_REGISTRY}')
+        invoke(f'docker push {DOCKER_TAG}')
 
 if args.deploy_staging or args.deploy_production:
     invoke_target('mkdir bloomo', check=False)
