@@ -1,0 +1,25 @@
+version: '3'
+
+services:
+  db:
+    image: postgres:13.0
+    container_name: bloomo-db
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: xgK10NVqMfzYqjkvRaCD7P9loy2HvOtw
+    volumes:
+      - ${POSTGRES_DATA_PATH}:/var/lib/postgresql/data
+    shm_size: 1g
+    ports:
+      - 5432:5432
+  bloomo-main:
+    image: ${DOCKER_TAG}
+    container_name: bloomo-main
+    depends_on:
+      - db
+    volumes:
+      - ${ENV_PATH}:/bloomo/env:ro
+      - ${STATIC_PATH}:/bloomo/static:ro
+    restart: always
+    ports:
+      - 8004:8004

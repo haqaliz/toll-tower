@@ -1,5 +1,5 @@
 const _ = require('lodash');
-const { utils } = require('Web3');
+const { utils } = require('web3');
 const { getTime } = require('date-fns');
 
 module.exports = {

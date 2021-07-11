@@ -1,0 +1,10 @@
+# GENERAL
+NODE_ENV=development
+SESSION_SECRET=bloomo
+
+# DATABASE
+DB=bloomo
+DB_USER=bloomo
+DB_PW=dev
+DB_HOST=localhost
+DB_PORT=5432

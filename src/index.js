@@ -13,10 +13,9 @@ const utils = require('./utils.js');
 const logger = require('./logger.js');
 const { foundation, price } = require('./integrations');
 
-const ASSETS = require('./config/assets.json');
+const config = require('./config');
 
-// CORS
-const origins = ['http://localhost:8080'];
+app.disable('x-powered-by');
 
 // HELPERS
 function asyncHandler(callback) {
@@ -57,38 +56,55 @@ passport.deserializeUser(async (id, done) => {
   }
 });
 
+// STATIC
+app.use(express.static('static'));
+
 // SESSION
 const SequelizeStore = connectSessionSequelize(session.Store);
 const store = new SequelizeStore({ db: models.sequelize });
 store.sync();
 app.use(session({
-  name: 'x-auth',
-  secret: 'QeOtLqfzR8Su$',
+  name: 'bloomo-auth',
+  secret: process.env.SESSION_SECRET,
   store,
   cookie: {
     sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'none',
     httpOnly: false,
-    secure: ['staging', 'production'].includes(process.env.NODE_ENV),
+    secure: false,
     maxAge: 7 * 24 * 60 * 60 * 1000,
   },
   resave: false,
   saveUninitialized: false,
 }));
 
-app.disable('x-powered-by');
+// JSON
 app.use(bodyParser.json());
-app.use((req, res, next) => {
-  res.set('Cache-Control', 'no-store');
-  next();
-});
-app.use(express.raw({ limit: '200MB' }));
+
+// PASSPORT
 app.use(passport.initialize());
 app.use(passport.session());
+
+// CORS
+const origins = [];
+if (process.env.NODE_ENV !== 'production') origins.push('http://localhost:8080');
+else {
+  origins.push('https://bloomo.app');
+}
 app.use(cors({
   origin: origins,
   credentials: true,
 }));
 
+// NO CACHING
+app.use((req, res, next) => {
+  res.set('Cache-Control', 'no-store');
+  next();
+});
+
+// RAW
+app.use(express.raw({ limit: '200MB' }));
+
+// AUTH ROUTES
 const authRouter = express.Router();
 
 authRouter.post(
@@ -111,6 +127,7 @@ authRouter.post(
   },
 );
 
+// REGULAR ROUTES
 const regularRouter = express.Router();
 
 regularRouter.get('/user/current', asyncHandler(async (req, res) => {
@@ -162,7 +179,7 @@ regularRouter.post('/user/artwork/:artwork_id/power-up', asyncHandler(async (req
   });
   const powerUps = _.keys(req.body);
   if (
-    !powerUps.some((i) => _.keys(ASSETS).includes(i))
+    !powerUps.some((i) => _.keys(config.assets).includes(i))
     || (
       powerUps.includes('preferences')
       && (Date.now() - (utils.getTime(artwork.renewed_at) / 1000) < (2 * 60))

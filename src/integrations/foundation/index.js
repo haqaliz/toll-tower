@@ -10,8 +10,8 @@ const ax = {
 const Vibrant = require('node-vibrant');
 
 const utils = require('../../utils');
-const ASSETS = require('../../config/assets.json');
-const methods = require('./methods.json');
+const config = require('../../config');
+const methods = require('./methods');
 const buildQuery = (methodName, params) => ({
   "query": `query ${methods[methodName]}`,
   "variables": params,
@@ -60,7 +60,7 @@ module.exports = {
       const address = utils.toChecksumAddress(id);
       const [asset] = await models.Assets.findOrCreate({
         where: { address },
-        defaults: { address, ...ASSETS },
+        defaults: { address, ...config.assets },
       });
       await models.Users.upsert({
         id: utils.toChecksumAddress(id),
