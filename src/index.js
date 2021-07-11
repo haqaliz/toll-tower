@@ -231,4 +231,6 @@ regularRouter.get('/price', asyncHandler(
 app.use('/auth', authRouter);
 app.use('/', regularRouter);
 
+app.use((req, res, next) => res.sendfile('/static/index.html', { root: __dirname + '/..' }));
+
 app.listen(8004, () => console.log('Toll tower is listening on 8004.'));
