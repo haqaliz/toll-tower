@@ -7,6 +7,7 @@ module.exports = (sequelize, DataTypes) => {
   Analysis.init({
     user_id: DataTypes.STRING,
     ip_address: DataTypes.STRING,
+    geo: DataTypes.JSONB,
     target_type: DataTypes.STRING,
     target_id: DataTypes.STRING,
     duration: DataTypes.INTEGER,

@@ -14,6 +14,10 @@ module.exports = {
         allowNull: false,
         type: Sequelize.STRING,
       },
+      geo: {
+        allowNull: false,
+        type: Sequelize.JSONB,
+      },
       target_type: {
         allowNull: false,
         type: Sequelize.STRING,
