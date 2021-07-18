@@ -224,6 +224,27 @@ regularRouter.get('/search', asyncHandler(
   },
 ));
 
+regularRouter.post('/analysis/:type/:id', asyncHandler(
+  async (req, res) => {
+    if (!req.body.duration) res.sendStatus(400);
+    await models.Analysis.create({
+      ...(req.user && {
+        user_id: req.user.id,
+      }),
+      ip_address: req.headers['x-forwarded-for']
+        || req.connection.remoteAddress,
+      target_type: req.params.type,
+      target_id: req.params.id,
+      duration: req.body.duration,
+      ...(req.body.targets && {
+        targets: req.body.targets,
+      }),
+      created_at: new Date(),
+    });
+    res.sendStatus(200);
+  },
+));
+
 regularRouter.get('/price', asyncHandler(
   async (req, res) => res.send(await price.get(req.query.currency)),
 ));
