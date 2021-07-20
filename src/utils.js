@@ -22,7 +22,7 @@ module.exports = {
         date: parseInt(i.raw.nftHistory[0].date, 10),
       },
       creator: {
-        id: i.creator_id,
+        id: i.creator.id,
         username: i.creator.raw.username,
         name: i.creator.raw.name,
         profile: i.creator.raw.profileImageUrl,

@@ -7,6 +7,7 @@ const LocalStrategy = require('passport-local').Strategy;
 const connectSessionSequelize = require('connect-session-sequelize');
 const session = require('express-session');
 const _ = require('lodash');
+const geoip = require('geoip-lite');
 
 const models = require('./models');
 const utils = require('./utils.js');
@@ -221,6 +222,31 @@ regularRouter.get('/search', asyncHandler(
     res.send(utils.cast.search(
       await foundation.search(req.query.q, req.query.indexes, req.query.limit),
     ));
+  },
+));
+
+regularRouter.post('/analysis/:type/:id', asyncHandler(
+  async (req, res) => {
+    if (!req.body.duration) res.sendStatus(400);
+    const ip = (process.env.NODE_ENV === 'production') ? (
+      req.headers['x-forwarded-for']
+      || req.connection.remoteAddress
+    ) : "207.97.227.239";
+    await models.Analysis.create({
+      ...(req.user && {
+        user_id: req.user.id,
+      }),
+      ip_address: ip,
+      geo: geoip.lookup(ip),
+      target_type: req.params.type,
+      target_id: req.params.id,
+      duration: req.body.duration,
+      ...(req.body.targets && {
+        targets: req.body.targets,
+      }),
+      created_at: new Date(),
+    });
+    res.sendStatus(200);
   },
 ));
 

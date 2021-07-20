@@ -70,16 +70,27 @@ module.exports = {
     }
     return await getUserFromDB(id);
   },
-  getMintedArtworks: async (
+  getOwnedArtworks: async (
     id, offset, limit, statuses,
   ) => {
-    const { data } = await ax.fnd.post('', buildQuery('mintedArtworks', {
-      moderationStatuses: statuses,
-      publicKey: id.toLowerCase(),
-      limit,
-      offset,
-    }));
-    return _.get(data, 'data.artworks');
+    const [owned, minted] = await Promise.all([
+      ax.fnd.post('', buildQuery('ownedArtworks', {
+        moderationStatuses: statuses,
+        publicKey: id.toLowerCase(),
+        limit,
+        offset,
+      })),
+      ax.fnd.post('', buildQuery('mintedArtworks', {
+        moderationStatuses: statuses,
+        publicKey: id.toLowerCase(),
+        limit,
+        offset,
+      })),
+    ]);
+    return [
+      ..._.get(owned, 'data.data.artworks'),
+      ..._.get(minted, 'data.data.artworks'),
+    ];
   },
   getArtworkHistory: async (contractId) => {
     const { data } = await ax.fnd.post('', buildQuery('artworkHistory', {
@@ -104,19 +115,19 @@ module.exports = {
       offset, limit, order: [['renewed_at', 'DESC']],
     });
     if (userId.toLowerCase() === 'all') return artworksList;
-    const [mintedArtworks, creator] = await Promise.all([
-      module.exports.getMintedArtworks(userId, offset, limit,  statuses),
+    const [ownedArtworks, creator] = await Promise.all([
+      module.exports.getOwnedArtworks(userId, offset, limit,  statuses),
       module.exports.getUser(userId),
     ]);
-    const targetArtworksToFetch = mintedArtworks.filter((i) => {
-      const minted = {
+    const targetArtworksToFetch = ownedArtworks.filter((i) => {
+      const owned = {
         tokenId: parseInt(i.tokenId, 10),
         ...(i.mostRecentActiveAuction && {
           auctionId: i.mostRecentActiveAuction.auctionId,
           price: i.mostRecentActiveAuction.reservePriceInETH,
         }),
       };
-      const storedItem = artworksList.find((j) => j.raw.tokenId === minted.tokenId);
+      const storedItem = artworksList.find((j) => j.raw.tokenId === owned.tokenId);
       const stored = storedItem && {
         tokenId: parseInt(storedItem.raw.tokenId, 10),
         ...(storedItem.raw.mostRecentActiveAuction && {
@@ -127,8 +138,8 @@ module.exports = {
       if (
         storedItem
         && (
-          (stored.auctionId === minted.auctionId)
-          || (stored.price === minted.price)
+          (stored.auctionId === owned.auctionId)
+          || (stored.price === owned.price)
         )
       ) return false;
       return true;
@@ -165,12 +176,12 @@ module.exports = {
       color: j.getHex(), population: j.population,
     })));
     await Promise.all(_.get(data, 'data.artworks').map((i, k) => {
-      const [mintedArtwork, artworkHistory] = [
+      const [ownedArtwork, artworkHistory] = [
         targetArtworksToFetch.find((j) => parseInt(j.tokenId, 10) === parseInt(i.tokenId, 10)),
         artworksHistory.find((j) => parseInt(j.tokenId, 10) === parseInt(i.tokenId, 10)),
       ];
       return {
-        ...mintedArtwork,
+        ...ownedArtwork,
         ...artworkHistory,
         ...i,
         contract: artworkHistory.id,
