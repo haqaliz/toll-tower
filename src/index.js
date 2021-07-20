@@ -216,14 +216,20 @@ regularRouter.get('/artworks/:artwork_id', asyncHandler(async (req, res) => res.
   utils.cast.artwork(await foundation.getArtwork(req.params.artwork_id)),
 )));
 
-regularRouter.get('/search', asyncHandler(
-  async (req, res) => {
-    if (!req.query.q || !req.query.q.length) return res.sendStatus(400);
-    res.send(utils.cast.search(
-      await foundation.search(req.query.q, req.query.indexes, req.query.limit),
-    ));
-  },
-));
+regularRouter.get('/search', asyncHandler(async (req, res) => {
+  if (!req.query.q || !req.query.q.length) return res.sendStatus(400);
+  res.send(utils.cast.search(
+    await foundation.search(req.query.q, req.query.indexes, req.query.limit),
+  ));
+}));
+
+regularRouter.get('/user/:user_id/states', asyncHandler(async (req, res) => res.send(
+  await foundation.getUserStates(req.params.user_id),
+)));
+
+regularRouter.get('/user/:user_id/follows', asyncHandler(async (req, res) => res.send(
+  await foundation.getUserFollowers(req.params.user_id, req.query.offset, req.query.limit),
+)));
 
 regularRouter.post('/analysis/:type/:id', asyncHandler(
   async (req, res) => {

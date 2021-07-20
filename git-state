@@ -1,0 +1,12 @@
+commit dc706762565246f30494d3e240bad32ba79273f9
+Merge: 8caf832 3b74834
+Author: Ali Haqiqi <78667368+haqaliz@users.noreply.github.com>
+Date:   Tue Jul 20 14:41:45 2021 +0430
+
+    Merge pull request #2 from haqaliz/haqaliz/create-analysis-model
+    
+    Haqaliz/create analysis model
+
+src/integrations/foundation/index.js
+src/integrations/foundation/methods.js
+src/utils.js

@@ -92,6 +92,32 @@ module.exports = {
       ..._.get(minted, 'data.data.artworks'),
     ];
   },
+  getUserFollowers: async (userId, offset = 0, limit = 5) => {
+    const { data } = await ax.hasura.post('', buildQuery('userFollowers', {
+      currentUserPublicKey: '',
+      publicKey: utils.toChecksumAddress(userId),
+      limit: parseInt(limit, 10),
+      offset: parseInt(offset, 10),
+    }));
+    return _.get(data, 'data.follows').map((i) => ({
+      id: i.user.publicKey,
+      name: i.user.name,
+      username: i.user.username,
+      profile: i.user.profileImageUrl,
+    }));
+  },
+  getUserStates: async (userId) => {
+    const { data } = await ax.hasura.post('', buildQuery('followState', {
+      currentUserPublicKey: '',
+      publicKey: utils.toChecksumAddress(userId),
+    }));
+    return {
+      followers: _.get(data, 'data.followerCount.aggregate.count'),
+      followings: _.get(data, 'data.followingCount.aggregate.count'),
+      // WE DONT NEED THIS FOR NOW
+      // mutual_follows: _.get(data, 'data.mutualFollowCount.aggregate.count'),
+    };
+  },
   getArtworkHistory: async (contractId) => {
     const { data } = await ax.fnd.post('', buildQuery('artworkHistory', {
       addressPlusTokenId: contractId,

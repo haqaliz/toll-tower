@@ -62,6 +62,8 @@ module.exports = {
       name: j.name || j.raw.name,
       username: j.username || j.raw.username,
       profile: j.profileImageUrl || j.raw.profileImageUrl,
+      bio: j.bio || j.raw.bio,
+      links: _.map(j.links || j.raw.links).filter((i) => i.handle),
     }))),
     user: (object, other = {}) => ({
       id: object.id,
