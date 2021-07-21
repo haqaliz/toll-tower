@@ -233,7 +233,7 @@ regularRouter.get('/user/:user_id/follows', asyncHandler(async (req, res) => res
 
 regularRouter.post('/analysis/:type/:id', asyncHandler(
   async (req, res) => {
-    if (!req.body.duration) res.sendStatus(400);
+    if (!req.body.duration) return res.sendStatus(400);
     const ip = (process.env.NODE_ENV === 'production') ? (
       req.headers['x-forwarded-for']
       || req.connection.remoteAddress
@@ -246,13 +246,13 @@ regularRouter.post('/analysis/:type/:id', asyncHandler(
       geo: geoip.lookup(ip),
       target_type: req.params.type,
       target_id: req.params.id,
-      duration: req.body.duration,
+      duration: parseInt(req.body.duration, 10),
       ...(req.body.targets && {
         targets: req.body.targets,
       }),
       created_at: new Date(),
     });
-    res.sendStatus(200);
+    return res.sendStatus(200);
   },
 ));
 

@@ -1,12 +1,65 @@
-commit dc706762565246f30494d3e240bad32ba79273f9
-Merge: 8caf832 3b74834
-Author: Ali Haqiqi <78667368+haqaliz@users.noreply.github.com>
-Date:   Tue Jul 20 14:41:45 2021 +0430
+commit 17cd15a2d0fd43fada11d8fa01f834fefc526302
+Author: Ali Alizade Haqiqi <aliz@x-matik.com>
+Date:   Wed Jul 21 03:05:01 2021 +0430
 
-    Merge pull request #2 from haqaliz/haqaliz/create-analysis-model
+    follow state and user followers
     
-    Haqaliz/create analysis model
+    Signed-off-by: Ali Alizade Haqiqi <aliz@x-matik.com>
 
+git-state
+src/index.js
 src/integrations/foundation/index.js
 src/integrations/foundation/methods.js
 src/utils.js
+
+===== diff =====
+diff --git a/git-state b/git-state
+index 43cafd4..30017d3 100644
+--- a/git-state
++++ b/git-state
+@@ -1,12 +1,39 @@
+-commit dc706762565246f30494d3e240bad32ba79273f9
+-Merge: 8caf832 3b74834
+-Author: Ali Haqiqi <78667368+haqaliz@users.noreply.github.com>
+-Date:   Tue Jul 20 14:41:45 2021 +0430
++commit 17cd15a2d0fd43fada11d8fa01f834fefc526302
++Author: Ali Alizade Haqiqi <aliz@x-matik.com>
++Date:   Wed Jul 21 03:05:01 2021 +0430
+ 
+-    Merge pull request #2 from haqaliz/haqaliz/create-analysis-model
++    follow state and user followers
+     
+-    Haqaliz/create analysis model
++    Signed-off-by: Ali Alizade Haqiqi <aliz@x-matik.com>
+ 
++git-state
++src/index.js
+ src/integrations/foundation/index.js
+ src/integrations/foundation/methods.js
+ src/utils.js
++
++===== diff =====
++diff --git a/git-state b/git-state
++index 43cafd4..62b2c68 100644
++--- a/git-state
+++++ b/git-state
++@@ -1,12 +1,13 @@
++-commit dc706762565246f30494d3e240bad32ba79273f9
++-Merge: 8caf832 3b74834
++-Author: Ali Haqiqi <78667368+haqaliz@users.noreply.github.com>
++-Date:   Tue Jul 20 14:41:45 2021 +0430
+++commit 17cd15a2d0fd43fada11d8fa01f834fefc526302
+++Author: Ali Alizade Haqiqi <aliz@x-matik.com>
+++Date:   Wed Jul 21 03:05:01 2021 +0430
++ 
++-    Merge pull request #2 from haqaliz/haqaliz/create-analysis-model
+++    follow state and user followers
++     
++-    Haqaliz/create analysis model
+++    Signed-off-by: Ali Alizade Haqiqi <aliz@x-matik.com>
++ 
+++git-state
+++src/index.js
++ src/integrations/foundation/index.js
++ src/integrations/foundation/methods.js
++ src/utils.js
