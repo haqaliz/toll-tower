@@ -8,6 +8,7 @@ const connectSessionSequelize = require('connect-session-sequelize');
 const session = require('express-session');
 const _ = require('lodash');
 const geoip = require('geoip-lite');
+const { Op } = require('sequelize');
 
 const models = require('./models');
 const utils = require('./utils.js');
@@ -238,19 +239,33 @@ regularRouter.post('/analysis/:type/:id', asyncHandler(
       req.headers['x-forwarded-for']
       || req.connection.remoteAddress
     ) : "207.97.227.239";
-    await models.Analysis.create({
-      ...(req.user && {
-        user_id: req.user.id,
-      }),
-      ip_address: ip,
-      geo: geoip.lookup(ip),
-      target_type: req.params.type,
-      target_id: req.params.id,
-      duration: parseInt(req.body.duration, 10),
-      ...(req.body.targets && {
-        targets: req.body.targets,
-      }),
-      created_at: new Date(),
+    await models.Analysis.findOrCreate({
+      where: {
+        ip_address: ip,
+        ...(req.user && {
+          user_id: req.user.id,
+        }),
+        target_id: req.params.id,
+        created_at: {
+          // Making sure that we don't have any analysis for this ip
+          // for begining of today
+          [Op.gte]: new Date((new Date()).setUTCHours(0, 0, 0, 0)),
+        },
+      },
+      defaults: {
+        ...(req.user && {
+          user_id: req.user.id,
+        }),
+        ip_address: ip,
+        geo: geoip.lookup(ip),
+        target_type: req.params.type,
+        target_id: req.params.id,
+        duration: parseInt(req.body.duration, 10),
+        ...(req.body.targets && {
+          targets: req.body.targets,
+        }),
+        created_at: new Date(),
+      },
     });
     return res.sendStatus(200);
   },
