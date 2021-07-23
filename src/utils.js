@@ -1,8 +1,9 @@
 const _ = require('lodash');
 const { utils } = require('web3');
-const { getTime } = require('date-fns');
+const { getTime, subDays } = require('date-fns');
 
 module.exports = {
+  subDays,
   toChecksumAddress: utils.toChecksumAddress,
   getTime,
   cast: {

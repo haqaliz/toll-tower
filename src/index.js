@@ -232,44 +232,58 @@ regularRouter.get('/user/:user_id/follows', asyncHandler(async (req, res) => res
   await foundation.getUserFollowers(req.params.user_id, req.query.offset, req.query.limit),
 )));
 
-regularRouter.post('/analysis/:type/:id', asyncHandler(
-  async (req, res) => {
-    if (!req.body.duration) return res.sendStatus(400);
-    const ip = (process.env.NODE_ENV === 'production') ? (
-      req.headers['x-forwarded-for']
-      || req.connection.remoteAddress
-    ) : "207.97.227.239";
-    await models.Analysis.findOrCreate({
-      where: {
-        ip_address: ip,
-        ...(req.user && {
-          user_id: req.user.id,
-        }),
-        target_id: req.params.id,
-        created_at: {
-          // Making sure that we don't have any analysis for this ip
-          // for begining of today
-          [Op.gte]: new Date((new Date()).setUTCHours(0, 0, 0, 0)),
-        },
+regularRouter.post('/analysis/:type/:id', asyncHandler(async (req, res) => {
+  if (!req.body.duration) return res.sendStatus(400);
+  const ip = (process.env.NODE_ENV === 'production') ? (
+    req.headers['x-forwarded-for']
+    || req.connection.remoteAddress
+  ) : "207.97.227.239";
+  await models.Analysis.findOrCreate({
+    where: {
+      ip_address: ip,
+      ...(req.user && {
+        user_id: req.user.id,
+      }),
+      target_id: req.params.id,
+      created_at: {
+        // Making sure that we don't have any analysis for this ip
+        // for begining of today
+        [Op.gte]: new Date((new Date()).setUTCHours(0, 0, 0, 0)),
       },
-      defaults: {
-        ...(req.user && {
-          user_id: req.user.id,
-        }),
-        ip_address: ip,
-        geo: geoip.lookup(ip),
-        target_type: req.params.type,
-        target_id: req.params.id,
-        duration: parseInt(req.body.duration, 10),
-        ...(req.body.targets && {
-          targets: req.body.targets,
-        }),
-        created_at: new Date(),
-      },
-    });
-    return res.sendStatus(200);
-  },
-));
+    },
+    defaults: {
+      ...(req.user && {
+        user_id: req.user.id,
+      }),
+      ip_address: ip,
+      geo: geoip.lookup(ip),
+      target_type: req.params.type,
+      target_id: req.params.id,
+      duration: parseInt(req.body.duration, 10),
+      ...(req.body.targets && {
+        targets: req.body.targets,
+      }),
+      created_at: new Date(),
+    },
+  });
+  return res.sendStatus(200);
+}));
+
+regularRouter.get('/analysis/:type/:id', asyncHandler(async (req, res) => {
+  // DEFAULT: latest 7 days
+  const [from, to] = [
+    (req.query.to && new Date(req.query.from * 1000)) || utils.subDays(new Date(), 7),
+    (req.query.to && new Date(req.query.to * 1000)) || new Date(),
+  ];
+  if (from.getTime() > to.getTime()) return res.sendStatus(400);
+  const analysis = await models.Analysis.targetCount(
+    req.params.type,
+    req.params.id,
+    from,
+    to,
+  );
+  return res.send(analysis);
+}));
 
 regularRouter.get('/price', asyncHandler(
   async (req, res) => res.send(await price.get(req.query.currency)),
