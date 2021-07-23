@@ -269,7 +269,24 @@ regularRouter.post('/analysis/:type/:id', asyncHandler(async (req, res) => {
   return res.sendStatus(200);
 }));
 
-regularRouter.get('/analysis/:type/:id', asyncHandler(async (req, res) => {
+regularRouter.get('/user/analysis/:type/:id', asyncHandler(async (req, res) => {
+  /* if (!req.user) return res.sendStatus(400);
+  const targetOptions = {
+    users: {
+      model: 'Users',
+      pair: 'id',
+      key: req.params.type === 'users'
+        && utils.toChecksumAddress(req.params.id),
+    },
+    artworks: {
+      model: 'Artworks',
+      pair: 'creator_id',
+      key: req.params.id,
+    },
+  }[req.params.type];
+  if (!targetOptions) return res.sendStatus(400);
+  const target = await models[targetOptions.model].findByPk(targetOptions.key);
+  if (!target || target[targetOptions.pair] !== req.user.id) return res.sendStatus(400); */
   // DEFAULT: latest 7 days
   const [from, to] = [
     (req.query.to && new Date(req.query.from * 1000)) || utils.subDays(new Date(), 7),
