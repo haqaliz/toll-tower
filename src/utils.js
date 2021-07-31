@@ -31,6 +31,9 @@ module.exports = {
       description: i.raw.description,
       renewed_at: getTime(i.renewed_at) / 1000,
       is_bold: i.is_bold,
+      ...(i.count && {
+        count: i.count,
+      }),
     })),
     artwork: (object) => ({
       id: object.id,
@@ -66,7 +69,7 @@ module.exports = {
       ...((j.bio || j.raw.bio) && {
         bio: j.bio || j.raw.bio,
       }),
-      ...((j.links || j.raw.links) && {
+      ...((j.links || (j.raw && j.raw.links)) && {
         links: _.map(j.links || j.raw.links).filter((i) => i.handle),
       }),
     }))),

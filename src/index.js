@@ -8,7 +8,8 @@ const connectSessionSequelize = require('connect-session-sequelize');
 const session = require('express-session');
 const _ = require('lodash');
 const geoip = require('geoip-lite');
-const { Op } = require('sequelize');
+const sequelize = require('sequelize');
+const { Op } = sequelize;
 
 const models = require('./models');
 const utils = require('./utils.js');
@@ -207,11 +208,20 @@ regularRouter.get('/user/:user_id/detail', asyncHandler(
   ),
 ));
 
-regularRouter.get('/user/:user_id/artworks', asyncHandler(async (req, res) => res.send(
-  utils.cast.artworks(await foundation.getArtworks(
-    req.params.user_id, req.params.offset, req.params.limit,
-  )),
-)));
+regularRouter.get('/user/:user_id/artworks/:granularity', asyncHandler(async (req, res, next) => {
+  if (req.params.user_id === 'analysis') return next();
+  const granularity = req.params.granularity.toLowerCase();
+  if (!['latest', 'most-viewed'].includes(granularity)) return res.sendStatus(400);
+  if (granularity === 'latest') {
+    res.send(utils.cast.artworks(await foundation.getArtworks(
+      req.params.user_id, req.params.offset, req.params.limit,
+    )));
+  } else if (granularity === 'most-viewed') {
+    res.send(utils.cast.artworks(await models.Analysis.mostViewed(
+      'artworks', req.params.offset, req.params.limit,
+    )));
+  }
+}));
 
 regularRouter.get('/artworks/:artwork_id', asyncHandler(async (req, res) => res.send(
   utils.cast.artwork(await foundation.getArtwork(req.params.artwork_id)),
